@@ -1,0 +1,11 @@
+{
+  "watch_folder": "C:/Users/patak/Documents/SortMe",
+  "rules": [
+    {
+      "name": "Matematika",
+      "keywords": ["MAT", "MAT3"],
+      "destination": "C:/Users/patak/Documents/School/Matematika"
+    }
+  ],
+  "ai_enabled": false
+}

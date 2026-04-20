@@ -1,0 +1,26 @@
+Moved C:/Users/patak/Documents/SortMe\Java.txt -> C:/Users/patak/Documents/School/MatematikaProgramovanie\Java.txt
+Moved C:/Users/patak/Documents/SortMe\MAT3.txt -> C:/Users/patak/Documents/School/Matematika\MAT3.txt
+Moved C:/Users/patak/Documents/SortMe\MAT_test.pdf -> C:/Users/patak/Documents/School/Matematika\MAT_test.pdf
+Moved C:/Users/patak/Documents/SortMe\PYTHON.pdf -> C:/Users/patak/Documents/School/MatematikaProgramovanie\PYTHON.pdf
+Moved C:/Users/patak/Documents/SortMe\JAVA.pdf -> C:/Users/patak/Documents/School/Programovanie\JAVA.pdf
+Moved C:/Users/patak/Documents/SortMe\MAT3.txt -> C:/Users/patak/Documents/School/Matematika\MAT3.txt
+Moved C:/Users/patak/Documents/SortMe\MAT_test.pdf -> C:/Users/patak/Documents/School/Matematika\MAT_test.pdf
+Moved C:/Users/patak/Documents/SortMe\PY.txt -> C:/Users/patak/Documents/School/Programovanie\PY.txt
+Moved C:/Users/patak/Documents/SortMe\test.txt -> C:/Users/patak/Documents/SortMe/Nezaradene\test.txt
+Unknown file moved to fallback: C:/Users/patak/Documents/SortMe\test.txt
+Moved C:/Users/patak/Documents/SortMe\JAVA.pdf -> C:/Users/patak/Documents/School/Programovanie\JAVA.pdf
+Moved C:/Users/patak/Documents/SortMe\MAT3.txt -> C:/Users/patak/Documents/School/Matematika\MAT3.txt
+Moved C:/Users/patak/Documents/SortMe\MAT_test.pdf -> C:/Users/patak/Documents/School/Matematika\MAT_test.pdf
+Moved C:/Users/patak/Documents/SortMe\PY.txt -> C:/Users/patak/Documents/School/Programovanie\PY.txt
+Moved C:/Users/patak/Documents/SortMe\tet.txt -> C:/Users/patak/Documents/Documents/School/Nezaradene\tet.txt
+Unknown file moved to fallback: C:/Users/patak/Documents/SortMe\tet.txt
+Moved C:/Users/patak/Documents/SortMe\Nová položka Textový dokument.txt -> C:/Users/patak/Documents/Documents/School/Nezaradene\Nová položka Textový dokument.txt
+Unknown file moved to fallback: C:/Users/patak/Documents/SortMe\Nová položka Textový dokument.txt
+Moved C:/Users/patak/Documents/SortMe\Nová položka Textový dokument.txt -> C:/Users/patak/Documents/Documents/School/Nezaradene\Nová položka Textový dokument.txt
+Unknown file moved to fallback: C:/Users/patak/Documents/SortMe\Nová položka Textový dokument.txt
+Moved C:/Users/patak/Documents/SortMe\Nová položka Textový dokument.txt -> C:/Users/patak/Documents/Documents/School/Nezaradene\Nová položka Textový dokument.txt
+Unknown file moved to fallback: C:/Users/patak/Documents/SortMe\Nová položka Textový dokument.txt
+Moved C:/Users/patak/Documents/SortMe\test.txt -> C:/Users/patak/Documents/School/Nezaradene\test.txt
+Unknown file moved to fallback: C:/Users/patak/Documents/SortMe\test.txt
+Moved C:/Users/patak/Documents/SortMe\test.txt -> C:/Users/patak/Documents/School/Nezaradene\test.txt
+Unknown file moved to fallback: C:/Users/patak/Documents/SortMe\test.txt
