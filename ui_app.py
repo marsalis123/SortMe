@@ -4,99 +4,140 @@ import threading
 import json
 
 from PySide6.QtWidgets import (
-    QApplication, QWidget, QVBoxLayout, QPushButton,
-    QLabel, QFileDialog, QTextEdit,
-    QLineEdit, QListWidget,
-    QSystemTrayIcon, QMenu
+    QApplication, QWidget, QHBoxLayout, QVBoxLayout,
+    QPushButton, QLabel, QFileDialog, QTextEdit,
+    QLineEdit, QListWidget, QSystemTrayIcon, QMenu
 )
 
 from PySide6.QtGui import QIcon, QAction
-from PySide6.QtCore import QTimer, Signal
+from PySide6.QtCore import Signal, QTimer
 
 from watcher import start_watching
 
 
 class SmartSorterUI(QWidget):
 
-    # =========================
-    # 🔥 QT SIGNAL (FIX LOG THREADING)
-    # =========================
     log_signal = Signal(str)
 
     def __init__(self):
         super().__init__()
 
-        # connect signal -> UI log
         self.log_signal.connect(self.log)
 
-        # ---------------- WINDOW ----------------
+        # ================= WINDOW =================
         self.setWindowTitle("SmartSorter")
-        self.setFixedSize(420, 650)
+        self.setMinimumSize(900, 600)
 
-        self.layout = QVBoxLayout()
+        self.root = QHBoxLayout()
 
-        self.label = QLabel("SMART SORTER")
-        self.label.setStyleSheet("font-size: 18px; font-weight: bold;")
-        self.layout.addWidget(self.label)
+        # ================= LEFT =================
+        self.left = QVBoxLayout()
 
-        self.sub_label = QLabel("File Automation System")
-        self.layout.addWidget(self.sub_label)
+        title = QLabel("SMART SORTER")
+        title.setStyleSheet("font-size: 18px; font-weight: bold;")
+        self.left.addWidget(title)
 
-        # ---------------- FOLDER ----------------
-        self.select_btn = QPushButton("📁 Vybrať SortMe priečinok")
+        self.select_btn = QPushButton("📁 Folder")
         self.select_btn.clicked.connect(self.select_folder)
-        self.layout.addWidget(self.select_btn)
+        self.left.addWidget(self.select_btn)
 
-        self.create_btn = QPushButton("➕ Vytvoriť SortMe priečinok")
-        self.create_btn.clicked.connect(self.create_sortme_folder)
-        self.layout.addWidget(self.create_btn)
-
-        # ---------------- RULES ----------------
-        self.rules_list = QListWidget()
-        self.layout.addWidget(self.rules_list)
-
-        self.rule_name = QLineEdit()
-        self.rule_name.setPlaceholderText("Názov (MAT, ENG, ...)")
-        self.layout.addWidget(self.rule_name)
-
-        self.rule_keywords = QLineEdit()
-        self.rule_keywords.setPlaceholderText("Keywords (MAT, ALGEBRA)")
-        self.layout.addWidget(self.rule_keywords)
-
-        self.rule_path = QLineEdit()
-        self.rule_path.setPlaceholderText("Cieľ (School/Matematika)")
-        self.layout.addWidget(self.rule_path)
-
-        self.add_rule_btn = QPushButton("➕ Pridať pravidlo")
-        self.add_rule_btn.clicked.connect(self.add_rule)
-        self.layout.addWidget(self.add_rule_btn)
-
-        # ---------------- CONTROL ----------------
-        self.start_btn = QPushButton("🚀 Spustiť sledovanie")
+        self.start_btn = QPushButton("🚀 START")
         self.start_btn.clicked.connect(self.start_sorting)
-        self.layout.addWidget(self.start_btn)
+        self.left.addWidget(self.start_btn)
 
         self.stop_btn = QPushButton("🛑 STOP")
         self.stop_btn.clicked.connect(self.stop_sorting)
-        self.layout.addWidget(self.stop_btn)
+        self.left.addWidget(self.stop_btn)
 
-        # ---------------- LOG ----------------
-        self.log_output = QTextEdit()
-        self.log_output.setReadOnly(True)
-        self.layout.addWidget(self.log_output)
+        self.rule_name = QLineEdit()
+        self.rule_name.setPlaceholderText("Rule name (e.g. Matematika)")
+        self.left.addWidget(self.rule_name)
 
-        self.setLayout(self.layout)
+        self.rule_keywords = QLineEdit()
+        self.rule_keywords.setPlaceholderText("Keywords (comma separated)")
+        self.left.addWidget(self.rule_keywords)
 
-        # ---------------- CONFIG ----------------
+        self.rule_path = QLineEdit()
+        self.rule_path.setPlaceholderText("Target folder (e.g. School/Math)")
+        self.left.addWidget(self.rule_path)
+
+        self.add_btn = QPushButton("➕ Add rule")
+        self.add_btn.clicked.connect(self.add_rule)
+        self.left.addWidget(self.add_btn)
+
+        self.edit_btn = QPushButton("✏️ Edit rule")
+        self.edit_btn.clicked.connect(self.edit_rule)
+        self.left.addWidget(self.edit_btn)
+
+        self.delete_btn = QPushButton("🗑 Delete rule")
+        self.delete_btn.clicked.connect(self.delete_rule)
+        self.left.addWidget(self.delete_btn)
+
+        # ================= RIGHT =================
+        self.right = QVBoxLayout()
+
+        self.status = QLabel("🔴 Stopped")
+        self.right.addWidget(self.status)
+
+        self.folder = QLabel("📁 -")
+        self.right.addWidget(self.folder)
+
+        self.count = QLabel("📦 0")
+        self.right.addWidget(self.count)
+
+        self.last = QLabel("⚡ -")
+        self.right.addWidget(self.last)
+
+        self.rules_list = QListWidget()
+        self.right.addWidget(QLabel("📂 Rules"))
+        self.right.addWidget(self.rules_list)
+
+        self.log_box = QTextEdit()
+        self.log_box.setReadOnly(True)
+        self.right.addWidget(self.log_box)
+
+        self.root.addLayout(self.left, 30)
+        self.root.addLayout(self.right, 70)
+
+        self.setLayout(self.root)
+
+        # ================= DATA =================
         self.config = {
             "watch_folder": "",
             "rules": []
         }
 
-        # ---------------- THREAD ----------------
-        self._running = False
+        self.running = False
+        self.edit_index = -1
 
-        # ---------------- STYLE ----------------
+        # ================= NOTIF BUFFER =================
+        self.notif_buffer = {
+            "success": [],
+            "warning": []
+        }
+
+        self.notif_timer = QTimer()
+        self.notif_timer.timeout.connect(self.flush_notifications)
+        self.notif_timer.start(5000)  # every 5 sec
+
+        # ================= TRAY =================
+        self.tray = QSystemTrayIcon(self)
+
+        icon_path = os.path.join(os.path.dirname(__file__), "icon.png")
+        self.tray.setIcon(QIcon(icon_path))
+
+        menu = QMenu()
+        menu.addAction("Open", self.show)
+        menu.addAction("Exit", self.exit_app)
+
+        self.tray.setContextMenu(menu)
+        self.tray.show()
+
+        # ================= LOAD =================
+        self.load_config()
+        self.refresh_rules()
+
+        # ================= STYLE =================
         self.setStyleSheet("""
             QWidget {
                 background-color: #020617;
@@ -107,7 +148,6 @@ class SmartSorterUI(QWidget):
             QPushButton {
                 border: 1px solid #22c55e;
                 padding: 6px;
-                background-color: #020617;
             }
 
             QPushButton:hover {
@@ -115,151 +155,178 @@ class SmartSorterUI(QWidget):
                 color: black;
             }
 
-            QTextEdit, QLineEdit {
+            QTextEdit, QLineEdit, QListWidget {
                 background-color: black;
                 border: 1px solid #22c55e;
-                color: #22c55e;
             }
         """)
 
-        # ---------------- TRAY ----------------
-        self.tray = QSystemTrayIcon(self)
+    # ================= NOTIFICATIONS =================
+    def notify(self, title, message, level="info"):
 
-        icon_path = os.path.join(os.path.dirname(__file__), "icon.png")
-        self.tray.setIcon(QIcon(icon_path))
+        # ERROR = immediate
+        if level == "error":
+            self.tray.showMessage(
+                title,
+                message,
+                QSystemTrayIcon.Critical,
+                500
+            )
+            return
 
-        menu = QMenu()
+        # BUFFERED
+        self.notif_buffer[level].append(message)
 
-        show_action = QAction("Otvoriť", self)
-        show_action.triggered.connect(self.show)
+    def flush_notifications(self):
 
-        exit_action = QAction("Ukončiť", self)
-        exit_action.triggered.connect(self.exit_app)
+        # SUCCESS
+        if self.notif_buffer["success"]:
+            count = len(self.notif_buffer["success"])
+            self.tray.showMessage(
+                "Sorting complete",
+                f"{count} file(s) moved",
+                QSystemTrayIcon.Information,
+                3000
+            )
+            self.notif_buffer["success"].clear()
 
-        menu.addAction(show_action)
-        menu.addAction(exit_action)
+        # WARNING
+        if self.notif_buffer["warning"]:
+            count = len(self.notif_buffer["warning"])
+            self.tray.showMessage(
+                "Unsorted files",
+                f"{count} file(s) moved to Nezaradene",
+                QSystemTrayIcon.Warning,
+                3000
+            )
+            self.notif_buffer["warning"].clear()
 
-        self.tray.setContextMenu(menu)
-        self.tray.show()
+    def update_status(self, status):
 
-        # ---------------- LOAD ----------------
-        self.load_config()
+        self.status.setText(
+        "🟢 Running" if status["running"] else "🔴 Stopped"
+        )
 
-    # =========================
-    # 🔥 LOG SYSTEM (MAIN THREAD ONLY)
-    # =========================
+        self.count.setText(f"📦 {status.get('processed_count', 0)}")
+        self.last.setText(f"⚡ {status.get('last_action', '-')}")
+        self.folder.setText(f"📁 {status.get('folder', '-')}")
+
+    # ================= LOG =================
     def log(self, msg):
-        self.log_output.append(msg)
+        self.log_box.append(msg)
         print(msg)
 
     def thread_log(self, msg):
-        # THREAD SAFE EMIT
         self.log_signal.emit(msg)
 
-    # =========================
-    # WATCHER
-    # =========================
+    # ================= WATCHER =================
     def start_sorting(self):
 
         if not self.config["watch_folder"]:
-            self.log("❌ Vyber folder!")
             return
 
-        self._running = True
-        self.log("🚀 START")
+        self.running = True
 
         def run():
             start_watching(
                 self.config["watch_folder"],
                 self.config,
-                lambda: self._running,
-                self.thread_log
+                lambda: self.running,
+                self.thread_log,
+                self.update_status,
+                self.notify
             )
 
         threading.Thread(target=run, daemon=True).start()
 
     def stop_sorting(self):
-        self._running = False
-        self.log("🛑 STOP")
+        self.running = False
 
-    # =========================
-    # FOLDER
-    # =========================
+    # ================= FOLDER =================
     def select_folder(self):
-        folder = QFileDialog.getExistingDirectory(self, "Vyber priečinok")
+        folder = QFileDialog.getExistingDirectory(self, "Select folder")
 
         if folder:
             self.config["watch_folder"] = folder
             self.save_config()
-            self.log(f"📁 {folder}")
 
-    def create_sortme_folder(self):
-        base = QFileDialog.getExistingDirectory(self, "Vyber miesto")
-
-        if base:
-            path = os.path.join(base, "SortMe")
-            os.makedirs(path, exist_ok=True)
-
-            self.config["watch_folder"] = path
-            self.save_config()
-            self.log(f"📁 {path}")
-
-    # =========================
-    # RULES
-    # =========================
+    # ================= RULES =================
     def add_rule(self):
 
-        if not self.rule_name.text() or not self.rule_keywords.text() or not self.rule_path.text():
-            self.log("❌ Missing fields")
-            return
-
-        self.config["rules"].append({
+        rule = {
             "name": self.rule_name.text(),
             "keywords": [k.strip() for k in self.rule_keywords.text().split(",")],
             "path": self.rule_path.text()
-        })
+        }
+
+        if self.edit_index >= 0:
+            self.config["rules"][self.edit_index] = rule
+            self.edit_index = -1
+        else:
+            self.config["rules"].append(rule)
 
         self.save_config()
         self.refresh_rules()
 
-        self.log("✅ Rule added")
+    def edit_rule(self):
+
+        idx = self.rules_list.currentRow()
+        if idx < 0:
+            return
+
+        rule = self.config["rules"][idx]
+
+        self.rule_name.setText(rule["name"])
+        self.rule_keywords.setText(", ".join(rule["keywords"]))
+        self.rule_path.setText(rule["path"])
+
+        self.edit_index = idx
+
+    def delete_rule(self):
+
+        idx = self.rules_list.currentRow()
+
+        if idx >= 0:
+            self.config["rules"].pop(idx)
+            self.save_config()
+            self.refresh_rules()
 
     def refresh_rules(self):
+
         self.rules_list.clear()
 
         for r in self.config["rules"]:
             self.rules_list.addItem(f"{r['name']} → {r['path']}")
 
-    # =========================
-    # CONFIG
-    # =========================
+    # ================= CONFIG =================
     def save_config(self):
-        with open("config.json", "w", encoding="utf-8") as f:
+        with open("config.json", "w") as f:
             json.dump(self.config, f, indent=4)
 
     def load_config(self):
         if os.path.exists("config.json"):
-            with open("config.json", "r", encoding="utf-8") as f:
+            with open("config.json", "r") as f:
                 self.config = json.load(f)
 
-            self.refresh_rules()
-            self.log("📂 Config loaded")
-
-    # =========================
-    # EXIT
-    # =========================
+    # ================= EXIT =================
     def exit_app(self):
-        self._running = False
+        self.running = False
         self.tray.hide()
         QApplication.quit()
 
     def closeEvent(self, event):
         event.ignore()
         self.hide()
+        self.tray.showMessage(
+            "SmartSorter",
+            "Running in background",
+            QSystemTrayIcon.Information,
+            2000
+        )
 
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    window = SmartSorterUI()
-    window.show()
+    w = SmartSorterUI()
+    w.show()
     sys.exit(app.exec())
