@@ -2,6 +2,7 @@ import sys
 import os
 import threading
 import json
+from datetime import datetime
 
 from PySide6.QtWidgets import (
     QApplication, QWidget, QHBoxLayout, QVBoxLayout,
@@ -9,8 +10,8 @@ from PySide6.QtWidgets import (
     QLineEdit, QListWidget, QSystemTrayIcon, QMenu
 )
 
-from PySide6.QtGui import QIcon, QAction
-from PySide6.QtCore import Signal, QTimer, Qt
+from PySide6.QtGui import QIcon
+from PySide6.QtCore import Signal, Qt
 
 from watcher import start_watching
 
@@ -31,9 +32,8 @@ class SmartSorterUI(QWidget):
 
         # ================= LEFT PANEL =================
         self.left = QVBoxLayout()
+        self.left.addSpacing(40)
 
-        # ===== ASCII LOGO =====
-        self.left.addSpacing(60)
         ascii_logo = r"""
  $$$$$$\                       $$\     $$\      $$\           
 $$  __$$\                      $$ |    $$$\    $$$ |          
@@ -45,50 +45,48 @@ $$\   $$ |$$ |  $$ |$$ |       $$ |$$\ $$ |\$  /$$ |$$   ____|
  \______/  \______/ \__|        \____/ \__|     \__| \_______|
 """
 
-        self.logo_label = QLabel(ascii_logo)
-        self.logo_label.setStyleSheet("""
-            font-family: Consolas;
-            font-size: 10px;
-        """)
-        self.logo_label.setAlignment(Qt.AlignLeft)
+        logo = QLabel(ascii_logo)
+        logo.setAlignment(Qt.AlignLeft)
+        self.left.addWidget(logo)
 
-        self.left.addWidget(self.logo_label)
-
-        # ===== SUBTITLE =====
         subtitle = QLabel("Smart File Sorting System")
-        subtitle.setStyleSheet("font-size: 11px; color: #16a34a;")
         subtitle.setAlignment(Qt.AlignCenter)
-
         self.left.addWidget(subtitle)
 
         self.left.addSpacing(10)
 
-        # ===== SEPARATOR =====
-        self.left.addSpacing(20)
         separator = QLabel("═════════════  SORT ENGINE  ═════════════")
-        separator.setStyleSheet("""
-            color: #22c55e;
-            font-weight: bold;
-        """)
         separator.setAlignment(Qt.AlignCenter)
-
         self.left.addWidget(separator)
-        self.left.addStretch(2)
 
-        # ===== BUTTONS =====
+        self.left.addSpacing(25)
+
+        # BUTTONS
         self.select_btn = QPushButton("📁 Select Folder")
         self.select_btn.clicked.connect(self.select_folder)
-        self.left.addWidget(self.select_btn)
 
         self.start_btn = QPushButton("🚀 START")
         self.start_btn.clicked.connect(self.start_sorting)
-        self.left.addWidget(self.start_btn)
 
         self.stop_btn = QPushButton("🛑 STOP")
         self.stop_btn.clicked.connect(self.stop_sorting)
-        self.left.addWidget(self.stop_btn)
 
-        # ===== RULE INPUT =====
+        self.start_btn.setStyleSheet("""
+            border: 2px solid #22c55e;
+            background-color: #022c22;
+            font-weight: bold;
+        """)
+
+        btn_row = QHBoxLayout()
+        btn_row.addWidget(self.start_btn)
+        btn_row.addWidget(self.stop_btn)
+
+        self.left.addWidget(self.select_btn)
+        self.left.addLayout(btn_row)
+
+        self.left.addSpacing(15)
+
+        # RULE INPUT
         self.rule_name = QLineEdit()
         self.rule_name.setPlaceholderText("Rule name (e.g. Matematika)")
         self.left.addWidget(self.rule_name)
@@ -98,20 +96,24 @@ $$\   $$ |$$ |  $$ |$$ |       $$ |$$\ $$ |\$  /$$ |$$   ____|
         self.left.addWidget(self.rule_keywords)
 
         self.rule_path = QLineEdit()
-        self.rule_path.setPlaceholderText("Target folder (e.g. School/Math)")
+        self.rule_path.setPlaceholderText("Target folder (full path!)")
         self.left.addWidget(self.rule_path)
 
+        self.left.addSpacing(10)
+
         self.add_btn = QPushButton("➕ Add / Save rule")
-        self.add_btn.clicked.connect(self.add_rule)
-        self.left.addWidget(self.add_btn)
-
         self.edit_btn = QPushButton("✏️ Edit selected rule")
-        self.edit_btn.clicked.connect(self.edit_rule)
-        self.left.addWidget(self.edit_btn)
-
         self.delete_btn = QPushButton("🗑 Delete rule")
+
+        self.add_btn.clicked.connect(self.add_rule)
+        self.edit_btn.clicked.connect(self.edit_rule)
         self.delete_btn.clicked.connect(self.delete_rule)
+
+        self.left.addWidget(self.add_btn)
+        self.left.addWidget(self.edit_btn)
         self.left.addWidget(self.delete_btn)
+
+        self.left.addStretch(1)
 
         # ================= RIGHT PANEL =================
         self.right = QVBoxLayout()
@@ -134,6 +136,23 @@ $$\   $$ |$$ |  $$ |$$ |       $$ |$$\ $$ |\$  /$$ |$$   ____|
         self.rules_list.itemDoubleClicked.connect(self.load_rule_to_inputs)
         self.right.addWidget(self.rules_list)
 
+        # TOGGLE
+        self.view_mode = "log"
+
+        toggle_layout = QHBoxLayout()
+
+        self.log_btn = QPushButton("LOG")
+        self.history_btn = QPushButton("HISTORY")
+
+        self.log_btn.clicked.connect(self.show_log)
+        self.history_btn.clicked.connect(self.show_history)
+
+        toggle_layout.addWidget(self.log_btn)
+        toggle_layout.addWidget(self.history_btn)
+
+        self.right.addLayout(toggle_layout)
+
+        # LOG BOX
         self.log_box = QTextEdit()
         self.log_box.setReadOnly(True)
         self.right.addWidget(self.log_box)
@@ -151,16 +170,6 @@ $$\   $$ |$$ |  $$ |$$ |       $$ |$$\ $$ |\$  /$$ |$$   ____|
 
         self.running = False
         self.edit_index = -1
-
-        # ================= NOTIFICATIONS =================
-        self.notif_buffer = {
-            "success": [],
-            "warning": []
-        }
-
-        self.notif_timer = QTimer()
-        self.notif_timer.timeout.connect(self.flush_notifications)
-        self.notif_timer.start(5000)
 
         # ================= TRAY =================
         self.tray = QSystemTrayIcon(self)
@@ -181,68 +190,97 @@ $$\   $$ |$$ |  $$ |$$ |       $$ |$$\ $$ |\$  /$$ |$$   ____|
 
         # ================= STYLE =================
         self.setStyleSheet("""
-            QWidget {
-                background-color: #020617;
-                color: #22c55e;
-                font-family: Consolas;
-            }
+        QWidget {
+            background-color: #020617;
+            color: #22c55e;
+            font-family: Consolas;
+        }
 
-            QPushButton {
-                border: 1px solid #22c55e;
-                padding: 6px;
-            }
+        QPushButton {
+            border: 1px solid #22c55e;
+            padding: 7px;
+            background-color: transparent;
+        }
 
-            QPushButton:hover {
-                background-color: #22c55e;
-                color: black;
-            }
+        QPushButton:hover {
+            background-color: #22c55e;
+            color: black;
+        }
 
-            QTextEdit, QLineEdit, QListWidget {
-                background-color: black;
-                border: 1px solid #22c55e;
-            }
+        QTextEdit, QLineEdit, QListWidget {
+            background-color: black;
+            border: 1px solid #22c55e;
+        }
         """)
 
     # ================= LOG =================
     def log(self, msg):
-        self.log_box.append(msg)
+        if self.view_mode == "log":
+            self.log_box.append(msg)
         print(msg)
 
     def thread_log(self, msg):
         self.log_signal.emit(msg)
 
+    # ================= HISTORY =================
+    def add_to_history(self, file, destination):
+        entry = {
+            "file": file,
+            "destination": destination,
+            "time": datetime.now().strftime("%H:%M:%S")
+        }
+
+        history = []
+
+        if os.path.exists("history.json"):
+            with open("history.json", "r") as f:
+                history = json.load(f)
+
+        history.append(entry)
+        history = history[-50:]
+
+        with open("history.json", "w") as f:
+            json.dump(history, f, indent=4)
+
+    def refresh_history(self):
+        self.log_box.clear()
+
+        if not os.path.exists(self.get_app_path("history.json")):
+            return
+
+        with open(self.get_app_path("history.json"), "r") as f:
+            history = json.load(f)
+
+        for item in reversed(history):
+            folder = os.path.dirname(item['destination'])
+            folder_name = os.path.basename(folder)
+
+            line = f"[{item['time']}] {item['file']} → {folder_name}"
+            self.log_box.append(line)
+
+    def show_log(self):
+        self.view_mode = "log"
+        self.log_box.clear()
+
+    def show_history(self):
+        self.view_mode = "history"
+        self.refresh_history()
+
     # ================= STATUS =================
     def update_status(self, status):
-        self.status.setText("🟢 Running" if status["running"] else "🔴 Stopped")
+        self.status.setText("🟢 Running" if status.get("running") else "🔴 Stopped")
         self.count.setText(f"📦 {status.get('processed_count', 0)}")
         self.last.setText(f"⚡ {status.get('last_action', '-')}")
         self.folder.setText(f"📁 {status.get('folder', '-')}")
 
-    # ================= NOTIFICATIONS =================
+    # ================= NOTIFY =================
     def notify(self, title, message, level="info"):
-
-        if level == "error":
-            self.tray.showMessage(title, message, QSystemTrayIcon.Critical, 3000)
-            return
-
-        self.notif_buffer[level].append(message)
-
-    def flush_notifications(self):
-
-        if self.notif_buffer["success"]:
-            count = len(self.notif_buffer["success"])
-            self.tray.showMessage("Sorted", f"{count} file(s) moved", QSystemTrayIcon.Information, 3000)
-            self.notif_buffer["success"].clear()
-
-        if self.notif_buffer["warning"]:
-            count = len(self.notif_buffer["warning"])
-            self.tray.showMessage("Unsorted", f"{count} file(s) moved to Nezaradene", QSystemTrayIcon.Warning, 3000)
-            self.notif_buffer["warning"].clear()
+        self.tray.showMessage(title, message, QSystemTrayIcon.Information, 3000)
 
     # ================= WATCHER =================
     def start_sorting(self):
-
         if not self.config["watch_folder"]:
+            self.log("❌ Select folder first!")
             return
 
         self.running = True
@@ -254,7 +292,8 @@ $$\   $$ |$$ |  $$ |$$ |       $$ |$$\ $$ |\$  /$$ |$$   ____|
                 lambda: self.running,
                 self.thread_log,
                 self.update_status,
-                self.notify
+                self.notify,
+                self.add_to_history
             )
 
         threading.Thread(target=run, daemon=True).start()
@@ -269,10 +308,20 @@ $$\   $$ |$$ |  $$ |$$ |       $$ |$$\ $$ |\$  /$$ |$$   ____|
         if folder:
             self.config["watch_folder"] = folder
             self.save_config()
+            self.folder.setText(f"📁 {folder}")
+
+    # ================= CONFIG =================
+    def save_config(self):
+        with open("config.json", "w") as f:
+            json.dump(self.config, f, indent=4)
+
+    def load_config(self):
+        if os.path.exists("config.json"):
+            with open("config.json", "r") as f:
+                self.config = json.load(f)
 
     # ================= RULES =================
     def add_rule(self):
-
         rule = {
             "name": self.rule_name.text(),
             "keywords": [k.strip() for k in self.rule_keywords.text().split(",")],
@@ -289,7 +338,6 @@ $$\   $$ |$$ |  $$ |$$ |       $$ |$$\ $$ |\$  /$$ |$$   ____|
         self.refresh_rules()
 
     def edit_rule(self):
-
         idx = self.rules_list.currentRow()
         if idx < 0:
             return
@@ -306,7 +354,6 @@ $$\   $$ |$$ |  $$ |$$ |       $$ |$$\ $$ |\$  /$$ |$$   ____|
         self.edit_rule()
 
     def delete_rule(self):
-
         idx = self.rules_list.currentRow()
 
         if idx >= 0:
@@ -315,21 +362,9 @@ $$\   $$ |$$ |  $$ |$$ |       $$ |$$\ $$ |\$  /$$ |$$   ____|
             self.refresh_rules()
 
     def refresh_rules(self):
-
         self.rules_list.clear()
-
         for r in self.config["rules"]:
             self.rules_list.addItem(f"{r['name']} → {r['path']}")
-
-    # ================= CONFIG =================
-    def save_config(self):
-        with open("config.json", "w") as f:
-            json.dump(self.config, f, indent=4)
-
-    def load_config(self):
-        if os.path.exists("config.json"):
-            with open("config.json", "r") as f:
-                self.config = json.load(f)
 
     # ================= EXIT =================
     def exit_app(self):

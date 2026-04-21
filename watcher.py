@@ -4,10 +4,6 @@ import shutil
 
 
 def safe_move(src, dst):
-    """
-    Ak súbor už existuje, neprerazí ho,
-    ale vytvorí unikátny názov.
-    """
     if not os.path.exists(dst):
         return dst
 
@@ -21,7 +17,7 @@ def safe_move(src, dst):
         i += 1
 
 
-def start_watching(folder, config, stop_flag, log, status_callback, notify_callback):
+def start_watching(folder, config, stop_flag, log, status_callback, notify_callback, history_callback):
 
     log("🔥 WATCHER STARTED")
 
@@ -81,29 +77,23 @@ def start_watching(folder, config, stop_flag, log, status_callback, notify_callb
 
                                 log(f"📦 MOVED: {msg}")
 
+                                # 🔥 HISTORY
+                                history_callback(file, target_path)
+
                                 processed_count += 1
                                 last_action = msg
 
                                 status["processed_count"] = processed_count
                                 status["last_action"] = last_action
 
-                                notify_callback(
-                                    "Sorted",
-                                    msg,
-                                    "success"
-                                )
+                                notify_callback("Sorted", msg, "success")
 
                                 push_status()
 
                             except Exception as e:
 
                                 log(f"❌ MOVE ERROR: {e}")
-
-                                notify_callback(
-                                    "Error",
-                                    str(e),
-                                    "error"
-                                )
+                                notify_callback("Error", str(e), "error")
 
                             moved = True
                             break
@@ -112,7 +102,7 @@ def start_watching(folder, config, stop_flag, log, status_callback, notify_callb
                         break
 
                 # =========================
-                # FALLBACK (NEZARADENE)
+                # FALLBACK
                 # =========================
                 if not moved:
 
@@ -129,41 +119,29 @@ def start_watching(folder, config, stop_flag, log, status_callback, notify_callb
 
                         log(f"⚠️ FALLBACK: {msg}")
 
+                        # 🔥 HISTORY
+                        history_callback(file, target_path)
+
                         processed_count += 1
                         last_action = msg
 
                         status["processed_count"] = processed_count
                         status["last_action"] = last_action
 
-                        notify_callback(
-                            "Unsorted",
-                            msg,
-                            "warning"
-                        )
+                        notify_callback("Unsorted", msg, "warning")
 
                         push_status()
 
                     except Exception as e:
 
                         log(f"❌ FALLBACK ERROR: {e}")
-
-                        notify_callback(
-                            "Error",
-                            str(e),
-                            "error"
-                        )
+                        notify_callback("Error", str(e), "error")
 
             time.sleep(1)
 
         except Exception as e:
             log(f"❌ WATCHER CRASH: {e}")
-
-            notify_callback(
-                "Watcher crash",
-                str(e),
-                "error"
-            )
-
+            notify_callback("Watcher crash", str(e), "error")
             time.sleep(2)
 
     status["running"] = False
