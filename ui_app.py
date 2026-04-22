@@ -2,15 +2,17 @@ import sys
 import os
 import threading
 import json
+import subprocess
+import platform
 from datetime import datetime
 
 from PySide6.QtWidgets import (
     QApplication, QWidget, QHBoxLayout, QVBoxLayout,
     QPushButton, QLabel, QFileDialog, QTextEdit,
-    QLineEdit, QListWidget, QSystemTrayIcon, QMenu
+    QLineEdit, QListWidget, QSystemTrayIcon, QMenu, QListWidgetItem
 )
 
-from PySide6.QtGui import QIcon
+from PySide6.QtGui import QIcon, QCursor
 from PySide6.QtCore import Signal, Qt
 
 from watcher import start_watching
@@ -44,7 +46,6 @@ $$\   $$ |$$ |  $$ |$$ |       $$ |$$\ $$ |\$  /$$ |$$   ____|
 \$$$$$$  |\$$$$$$  |$$ |       \$$$$  |$$ | \_/ $$ |\$$$$$$$\ 
  \______/  \______/ \__|        \____/ \__|     \__| \_______|
 """
-
         logo = QLabel(ascii_logo)
         logo.setAlignment(Qt.AlignLeft)
         self.left.addWidget(logo)
@@ -61,7 +62,6 @@ $$\   $$ |$$ |  $$ |$$ |       $$ |$$\ $$ |\$  /$$ |$$   ____|
 
         self.left.addSpacing(25)
 
-        # BUTTONS
         self.select_btn = QPushButton("📁 Select Folder")
         self.select_btn.clicked.connect(self.select_folder)
 
@@ -86,7 +86,6 @@ $$\   $$ |$$ |  $$ |$$ |       $$ |$$\ $$ |\$  /$$ |$$   ____|
 
         self.left.addSpacing(15)
 
-        # RULE INPUT
         self.rule_name = QLineEdit()
         self.rule_name.setPlaceholderText("Rule name (e.g. Matematika)")
         self.left.addWidget(self.rule_name)
@@ -157,23 +156,28 @@ $$\   $$ |$$ |  $$ |$$ |       $$ |$$\ $$ |\$  /$$ |$$   ____|
         self.log_box.setReadOnly(True)
         self.right.addWidget(self.log_box)
 
+        # HISTORY LIST (nové)
+        self.history_list = QListWidget()
+        self.history_list.hide()
+
+        self.history_list.itemDoubleClicked.connect(self.open_selected_folder)
+        self.history_list.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.history_list.customContextMenuRequested.connect(self.show_history_context_menu)
+
+        self.right.addWidget(self.history_list)
+
         self.root.addLayout(self.left, 35)
         self.root.addLayout(self.right, 65)
 
         self.setLayout(self.root)
 
-        # ================= DATA =================
-        self.config = {
-            "watch_folder": "",
-            "rules": []
-        }
-
+        # DATA
+        self.config = {"watch_folder": "", "rules": []}
         self.running = False
         self.edit_index = -1
 
-        # ================= TRAY =================
+        # TRAY
         self.tray = QSystemTrayIcon(self)
-
         icon_path = os.path.join(os.path.dirname(__file__), "icon.png")
         self.tray.setIcon(QIcon(icon_path))
 
@@ -184,11 +188,10 @@ $$\   $$ |$$ |  $$ |$$ |       $$ |$$\ $$ |\$  /$$ |$$   ____|
         self.tray.setContextMenu(menu)
         self.tray.show()
 
-        # ================= LOAD =================
         self.load_config()
         self.refresh_rules()
 
-        # ================= STYLE =================
+        # STYLE (nezmenené)
         self.setStyleSheet("""
         QWidget {
             background-color: #020617;
@@ -213,72 +216,98 @@ $$\   $$ |$$ |  $$ |$$ |       $$ |$$\ $$ |\$  /$$ |$$   ____|
         }
         """)
 
-    # ================= LOG =================
-    def log(self, msg):
-        if self.view_mode == "log":
-            self.log_box.append(msg)
-        print(msg)
-
-    def thread_log(self, msg):
-        self.log_signal.emit(msg)
-
     # ================= HISTORY =================
-    def add_to_history(self, file, destination):
-
-        entry = {
-            "file": file,
-            "destination": destination,
-            "time": datetime.now().strftime("%H:%M:%S")
-        }
+    def refresh_history(self):
+        self.history_list.clear()
 
         path = self.get_app_path("history.json")
-
-        history = []
-
-        if os.path.exists(path):
-            with open(path, "r") as f:
-                history = json.load(f)
-
-        history.append(entry)
-        history = history[-50:]
-
-        with open(path, "w") as f:
-            json.dump(history, f, indent=4)
-
-    def refresh_history(self):
-        self.log_box.clear()
-
-        if not os.path.exists(self.get_app_path("history.json")):
+        if not os.path.exists(path):
             return
 
-        with open(self.get_app_path("history.json"), "r") as f:
+        with open(path, "r") as f:
             history = json.load(f)
 
         for item in reversed(history):
             folder = os.path.dirname(item['destination'])
             folder_name = os.path.basename(folder)
 
-            line = f"[{item['time']}] {item['file']} → {folder_name}"
-            self.log_box.append(line)
+            text = f"[{item['time']}] {item['file']} → {folder_name}"
 
+            list_item = QListWidgetItem(text)
+            list_item.setData(Qt.UserRole, {
+                "folder": folder,
+                "file": item["destination"]
+            })
+
+            self.history_list.addItem(list_item)
+
+    def open_selected_folder(self, item):
+        data = item.data(Qt.UserRole)
+        self.open_folder(data["folder"])
+
+    def show_history_context_menu(self, position):
+        item = self.history_list.itemAt(position)
+        if not item:
+            return
+
+        data = item.data(Qt.UserRole)
+
+        menu = QMenu()
+
+        open_folder = menu.addAction("📂 Open folder")
+        show_file = menu.addAction("📄 Show file")
+        copy_path = menu.addAction("📋 Copy path")
+
+        action = menu.exec(QCursor.pos())
+
+        if action == open_folder:
+            self.open_folder(data["folder"])
+        elif action == show_file:
+            self.show_file_in_explorer(data["file"])
+        elif action == copy_path:
+            QApplication.clipboard().setText(data["file"])
+
+    def open_folder(self, path):
+        if platform.system() == "Windows":
+            os.startfile(path)
+        elif platform.system() == "Darwin":
+            subprocess.Popen(["open", path])
+        else:
+            subprocess.Popen(["xdg-open", path])
+
+    def show_file_in_explorer(self, file_path):
+        if platform.system() == "Windows":
+            subprocess.Popen(f'explorer /select,"{file_path}"')
+        elif platform.system() == "Darwin":
+            subprocess.Popen(["open", "-R", file_path])
+        else:
+            subprocess.Popen(["xdg-open", os.path.dirname(file_path)])
+
+    # ================= VIEW =================
     def show_log(self):
         self.view_mode = "log"
+        self.history_list.hide()
+        self.log_box.show()
         self.log_box.clear()
 
     def show_history(self):
         self.view_mode = "history"
+        self.log_box.hide()
+        self.history_list.show()
         self.refresh_history()
 
-    # ================= STATUS =================
-    def update_status(self, status):
-        self.status.setText("🟢 Running" if status.get("running") else "🔴 Stopped")
-        self.count.setText(f"📦 {status.get('processed_count', 0)}")
-        self.last.setText(f"⚡ {status.get('last_action', '-')}")
-        self.folder.setText(f"📁 {status.get('folder', '-')}")
+    # ================= LOG =================
+    def log(self, msg):
+        if self.view_mode == "log":
+            self.log_box.append(msg)
 
-    # ================= NOTIFY =================
-    def notify(self, title, message, level="info"):
-        self.tray.showMessage(title, message, QSystemTrayIcon.Information, 3000)
+        print(msg)
+
+        with open(self.get_app_path("log.txt"), "a", encoding="utf-8") as f:
+            f.write(msg + "\n")
+
+    def thread_log(self, msg):
+        self.log_signal.emit(msg)
 
     # ================= WATCHER =================
     def start_sorting(self):
@@ -303,6 +332,37 @@ $$\   $$ |$$ |  $$ |$$ |       $$ |$$\ $$ |\$  /$$ |$$   ____|
 
     def stop_sorting(self):
         self.running = False
+
+    # ================= HISTORY SAVE =================
+    def add_to_history(self, file, destination):
+        entry = {
+            "file": file,
+            "destination": destination,
+            "time": datetime.now().strftime("%H:%M:%S")
+        }
+
+        path = self.get_app_path("history.json")
+
+        history = []
+        if os.path.exists(path):
+            with open(path, "r") as f:
+                history = json.load(f)
+
+        history.append(entry)
+        history = history[-50:]
+
+        with open(path, "w") as f:
+            json.dump(history, f, indent=4)
+
+    # ================= STATUS =================
+    def update_status(self, status):
+        self.status.setText("🟢 Running" if status.get("running") else "🔴 Stopped")
+        self.count.setText(f"📦 {status.get('processed_count', 0)}")
+        self.last.setText(f"⚡ {status.get('last_action', '-')}")
+        self.folder.setText(f"📁 {status.get('folder', '-')}")
+
+    def notify(self, title, message, level="info"):
+        self.tray.showMessage(title, message, QSystemTrayIcon.Information, 3000)
 
     # ================= FOLDER =================
     def select_folder(self):
@@ -374,16 +434,6 @@ $$\   $$ |$$ |  $$ |$$ |       $$ |$$\ $$ |\$  /$$ |$$   ____|
         self.rules_list.clear()
         for r in self.config["rules"]:
             self.rules_list.addItem(f"{r['name']} → {r['path']}")
-
-    # ================= LOG =================
-    def log(self, msg):
-        if self.view_mode == "log":
-            self.log_box.append(msg)
-
-        print(msg)
-
-        with open(self.get_app_path("log.txt"), "a", encoding="utf-8") as f:
-            f.write(msg + "\n")
 
     # ================= EXIT =================
     def exit_app(self):
