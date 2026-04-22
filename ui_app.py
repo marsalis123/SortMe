@@ -228,15 +228,20 @@ $$\   $$ |$$ |  $$ |$$ |       $$ |$$\ $$ |\$  /$$ |$$   ____|
             history = json.load(f)
 
         for item in reversed(history):
-            folder = os.path.dirname(item['destination'])
+
+            file_name = item.get("file") or item.get("source") or "unknown"
+            destination = item.get("destination", "")
+
+            folder = os.path.dirname(destination)
             folder_name = os.path.basename(folder)
 
-            text = f"[{item['time']}] {item['file']} → {folder_name}"
+            text = f"[{item.get('time', '-')}] {file_name} → {folder_name}"
 
             list_item = QListWidgetItem(text)
             list_item.setData(Qt.UserRole, {
+                "file": file_name,
                 "folder": folder,
-                "file": item["destination"]
+                "destination": destination
             })
 
             self.history_list.addItem(list_item)
