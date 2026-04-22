@@ -224,22 +224,25 @@ $$\   $$ |$$ |  $$ |$$ |       $$ |$$\ $$ |\$  /$$ |$$   ____|
 
     # ================= HISTORY =================
     def add_to_history(self, file, destination):
+
         entry = {
             "file": file,
             "destination": destination,
             "time": datetime.now().strftime("%H:%M:%S")
         }
 
+        path = self.get_app_path("history.json")
+
         history = []
 
-        if os.path.exists("history.json"):
-            with open("history.json", "r") as f:
+        if os.path.exists(path):
+            with open(path, "r") as f:
                 history = json.load(f)
 
         history.append(entry)
         history = history[-50:]
 
-        with open("history.json", "w") as f:
+        with open(path, "w") as f:
             json.dump(history, f, indent=4)
 
     def refresh_history(self):
@@ -310,14 +313,20 @@ $$\   $$ |$$ |  $$ |$$ |       $$ |$$\ $$ |\$  /$$ |$$   ____|
             self.save_config()
             self.folder.setText(f"📁 {folder}")
 
+    def get_app_path(self, filename):
+        base = os.path.join(os.path.dirname(__file__), "SortMeData")
+        os.makedirs(base, exist_ok=True)
+        return os.path.join(base, filename)
+
     # ================= CONFIG =================
     def save_config(self):
-        with open("config.json", "w") as f:
+        with open(self.get_app_path("config.json"), "w") as f:
             json.dump(self.config, f, indent=4)
 
     def load_config(self):
-        if os.path.exists("config.json"):
-            with open("config.json", "r") as f:
+        path = self.get_app_path("config.json")
+        if os.path.exists(path):
+            with open(path, "r") as f:
                 self.config = json.load(f)
 
     # ================= RULES =================
@@ -365,6 +374,16 @@ $$\   $$ |$$ |  $$ |$$ |       $$ |$$\ $$ |\$  /$$ |$$   ____|
         self.rules_list.clear()
         for r in self.config["rules"]:
             self.rules_list.addItem(f"{r['name']} → {r['path']}")
+
+    # ================= LOG =================
+    def log(self, msg):
+        if self.view_mode == "log":
+            self.log_box.append(msg)
+
+        print(msg)
+
+        with open(self.get_app_path("log.txt"), "a", encoding="utf-8") as f:
+            f.write(msg + "\n")
 
     # ================= EXIT =================
     def exit_app(self):
