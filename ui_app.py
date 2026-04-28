@@ -9,7 +9,8 @@ from datetime import datetime
 from PySide6.QtWidgets import (
     QApplication, QWidget, QHBoxLayout, QVBoxLayout,
     QPushButton, QLabel, QFileDialog, QTextEdit,
-    QLineEdit, QListWidget, QSystemTrayIcon, QMenu, QListWidgetItem
+    QLineEdit, QListWidget, QSystemTrayIcon, QMenu,
+    QListWidgetItem, QMessageBox
 )
 
 from PySide6.QtGui import QIcon, QCursor
@@ -95,8 +96,16 @@ $$\   $$ |$$ |  $$ |$$ |       $$ |$$\ $$ |\$  /$$ |$$   ____|
         self.left.addWidget(self.rule_keywords)
 
         self.rule_path = QLineEdit()
-        self.rule_path.setPlaceholderText("Target folder (full path!)")
-        self.left.addWidget(self.rule_path)
+        self.rule_path.setPlaceholderText("Target folder")
+
+        self.browse_rule_btn = QPushButton("📂 Browse")
+        self.browse_rule_btn.clicked.connect(self.select_rule_folder)
+
+        path_layout = QHBoxLayout()
+        path_layout.addWidget(self.rule_path)
+        path_layout.addWidget(self.browse_rule_btn)
+
+        self.left.addLayout(path_layout)
 
         self.left.addSpacing(10)
 
@@ -148,6 +157,11 @@ $$\   $$ |$$ |  $$ |$$ |       $$ |$$\ $$ |\$  /$$ |$$   ____|
 
         toggle_layout.addWidget(self.log_btn)
         toggle_layout.addWidget(self.history_btn)
+
+        self.clear_history_btn = QPushButton("🗑 Clear History")
+        self.clear_history_btn.clicked.connect(self.clear_history)
+        self.clear_history_btn.hide()
+        toggle_layout.addWidget(self.clear_history_btn)
 
         self.right.addLayout(toggle_layout)
 
@@ -291,15 +305,46 @@ $$\   $$ |$$ |  $$ |$$ |       $$ |$$\ $$ |\$  /$$ |$$   ____|
     # ================= VIEW =================
     def show_log(self):
         self.view_mode = "log"
+
         self.history_list.hide()
         self.log_box.show()
-        self.log_box.clear()
+
+        self.clear_history_btn.hide()
 
     def show_history(self):
         self.view_mode = "history"
+
         self.log_box.hide()
         self.history_list.show()
+
+        self.clear_history_btn.show()
+
         self.refresh_history()
+
+    def clear_history(self):
+
+        reply = QMessageBox.question(
+            self,
+            "Clear History",
+            "Are you sure you want to clear history?",
+            QMessageBox.Yes | QMessageBox.No
+        )
+
+        if reply != QMessageBox.Yes:
+            return
+
+        path = self.get_app_path("history.json")
+
+        try:
+            with open(path, "w") as f:
+                json.dump([], f)
+
+            self.history_list.clear()
+
+            self.log("🗑 History cleared")
+
+        except Exception as e:
+            self.log(f"❌ Failed to clear history: {e}")
 
     # ================= LOG =================
     def log(self, msg):
@@ -343,7 +388,7 @@ $$\   $$ |$$ |  $$ |$$ |       $$ |$$\ $$ |\$  /$$ |$$   ____|
         entry = {
             "file": file,
             "destination": destination,
-            "time": datetime.now().strftime("%H:%M:%S")
+            "time": datetime.now().strftime("%d.%m.%Y %H:%M:%S")
         }
 
         path = self.get_app_path("history.json")
@@ -383,6 +428,12 @@ $$\   $$ |$$ |  $$ |$$ |       $$ |$$\ $$ |\$  /$$ |$$   ____|
         os.makedirs(base, exist_ok=True)
         return os.path.join(base, filename)
 
+    def select_rule_folder(self):
+        folder = QFileDialog.getExistingDirectory(self, "Select target folder")
+
+        if folder:
+            self.rule_path.setText(folder)
+
     # ================= CONFIG =================
     def save_config(self):
         with open(self.get_app_path("config.json"), "w") as f:
@@ -396,20 +447,52 @@ $$\   $$ |$$ |  $$ |$$ |       $$ |$$\ $$ |\$  /$$ |$$   ____|
 
     # ================= RULES =================
     def add_rule(self):
+
+        name = self.rule_name.text().strip()
+        keywords_text = self.rule_keywords.text().strip()
+        path = self.rule_path.text().strip()
+
+        # VALIDATION
+        if not name:
+            self.log("❌ Rule name cannot be empty!")
+            return
+
+        if not keywords_text:
+            self.log("❌ Keywords cannot be empty!")
+            return
+
+        if not path:
+            self.log("❌ Target path cannot be empty!")
+            return
+
+        keywords = [k.strip() for k in keywords_text.split(",") if k.strip()]
+
+        if not keywords:
+            self.log("❌ Invalid keywords!")
+            return
+
         rule = {
-            "name": self.rule_name.text(),
-            "keywords": [k.strip() for k in self.rule_keywords.text().split(",")],
-            "path": self.rule_path.text()
+            "name": name,
+            "keywords": keywords,
+            "path": path
         }
 
         if self.edit_index >= 0:
             self.config["rules"][self.edit_index] = rule
             self.edit_index = -1
+            self.log(f"✏️ Updated rule: {name}")
+
         else:
             self.config["rules"].append(rule)
+            self.log(f"➕ Added rule: {name}")
 
         self.save_config()
         self.refresh_rules()
+
+        # CLEAR INPUTS
+        self.rule_name.clear()
+        self.rule_keywords.clear()
+        self.rule_path.clear()
 
     def edit_rule(self):
         idx = self.rules_list.currentRow()
