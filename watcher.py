@@ -60,24 +60,38 @@ def start_watching(folder, config, stop_flag, log, status_callback, notify_callb
                 # =========================
                 for rule in config.get("rules", []):
 
+                    # =========================
+                    # SAFE RULE READ
+                    # =========================
+                    path = rule.get("path")
+
+                    if not path:
+                        log(f"❌ Skipping rule without path: {rule}")
+                        continue
+
+                    path = os.path.normpath(path)
+
+                    # =========================
+                    # KEYWORD MATCH
+                    # =========================
                     for keyword in rule.get("keywords", []):
 
                         if keyword.lower() in file.lower():
 
-                            target_dir = os.path.join(base_folder, rule["path"])
-                            os.makedirs(target_dir, exist_ok=True)
-
-                            target_path = os.path.join(target_dir, file)
-                            target_path = safe_move(full_path, target_path)
+                            target_dir = path
 
                             try:
+                                if not os.path.exists(target_dir):
+                                    os.makedirs(target_dir)
+
+                                target_path = os.path.join(target_dir, file)
+                                target_path = safe_move(full_path, target_path)
+
                                 shutil.move(full_path, target_path)
 
-                                msg = f"{file} → {rule['path']}"
-
+                                msg = f"{file} → {rule['name']}"
                                 log(f"📦 MOVED: {msg}")
 
-                                # 🔥 HISTORY
                                 history_callback(file, target_path)
 
                                 processed_count += 1
@@ -91,7 +105,6 @@ def start_watching(folder, config, stop_flag, log, status_callback, notify_callb
                                 push_status()
 
                             except Exception as e:
-
                                 log(f"❌ MOVE ERROR: {e}")
                                 notify_callback("Error", str(e), "error")
 

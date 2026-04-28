@@ -240,8 +240,14 @@ $$\   $$ |$$ |  $$ |$$ |       $$ |$$\ $$ |\$  /$$ |$$   ____|
         if not os.path.exists(path):
             return
 
-        with open(path, "r") as f:
-            history = json.load(f)
+        try:
+            with open(path, "r") as f:
+                history = json.load(f)
+
+        except Exception as e:
+
+            self.log(f"❌ History load failed: {e}")
+            history = []
 
         for item in reversed(history):
 
@@ -424,8 +430,15 @@ $$\   $$ |$$ |  $$ |$$ |       $$ |$$\ $$ |\$  /$$ |$$   ____|
 
         history = []
         if os.path.exists(path):
-            with open(path, "r") as f:
-                history = json.load(f)
+
+            try:
+                with open(path, "r") as f:
+                    history = json.load(f)
+
+            except Exception as e:
+
+                self.log(f"❌ History read failed: {e}")
+                history = []
 
         history.append(entry)
         history = history[-50:]
@@ -469,35 +482,58 @@ $$\   $$ |$$ |  $$ |$$ |       $$ |$$\ $$ |\$  /$$ |$$   ____|
             json.dump(self.config, f, indent=4)
 
     def load_config(self):
+
         path = self.get_app_path("config.json")
-        if os.path.exists(path):
+
+        if not os.path.exists(path):
+            return
+
+        try:
             with open(path, "r") as f:
                 self.config = json.load(f)
+
+        except Exception as e:
+
+            self.log(f"❌ Config load failed: {e}")
+
+            self.config = {
+                "watch_folder": "",
+                "rules": []
+            }
 
     # ================= RULES =================
     def add_rule(self):
 
         name = self.rule_name.text().strip()
-        keywords_text = self.rule_keywords.text().strip()
+        keywords = [k.strip() for k in self.rule_keywords.text().split(",")]
         path = self.rule_path.text().strip()
 
+        # =========================
         # VALIDATION
+        # =========================
+
         if not name:
-            self.log("❌ Rule name cannot be empty!")
+            self.log("❌ Rule name is empty")
             return
 
-        if not keywords_text:
-            self.log("❌ Keywords cannot be empty!")
+        if not keywords or keywords == [""]:
+            self.log("❌ Keywords are empty")
             return
 
         if not path:
-            self.log("❌ Target path cannot be empty!")
+            self.log("❌ Path is empty")
             return
 
-        keywords = [k.strip() for k in keywords_text.split(",") if k.strip()]
+        # normalize path
+        path = os.path.normpath(path)
 
-        if not keywords:
-            self.log("❌ Invalid keywords!")
+        # create folder if not exists
+        try:
+            if not os.path.exists(path):
+                os.makedirs(path)
+                self.log(f"📁 Created missing folder: {path}")
+        except Exception as e:
+            self.log(f"❌ Invalid path: {e}")
             return
 
         rule = {
@@ -509,31 +545,62 @@ $$\   $$ |$$ |  $$ |$$ |       $$ |$$\ $$ |\$  /$$ |$$   ____|
         if self.edit_index >= 0:
             self.config["rules"][self.edit_index] = rule
             self.edit_index = -1
-            self.log(f"✏️ Updated rule: {name}")
-
         else:
             self.config["rules"].append(rule)
-            self.log(f"➕ Added rule: {name}")
 
         self.save_config()
         self.refresh_rules()
 
-        # CLEAR INPUTS
+        # =========================
+        # RESET INPUTS AFTER SAVE
+        # =========================
         self.rule_name.clear()
         self.rule_keywords.clear()
         self.rule_path.clear()
+        self.edit_index = -1
 
     def edit_rule(self):
+
         idx = self.rules_list.currentRow()
         if idx < 0:
             return
 
-        rule = self.config["rules"][idx]
+        # =========================
+        # SAFE RULE ACCESS
+        # =========================
+        try:
+            rule = self.config["rules"][idx]
+        except Exception as e:
+            self.log(f"❌ Rule load error: {e}")
+            return
 
-        self.rule_name.setText(rule["name"])
-        self.rule_keywords.setText(", ".join(rule["keywords"]))
-        self.rule_path.setText(rule["path"])
+        # =========================
+        # VALIDATION / SANITIZATION
+        # =========================
+        name = rule.get("name", "")
+        keywords = rule.get("keywords", [])
+        path = rule.get("path", "")
 
+        # fix keywords if broken
+        if isinstance(keywords, str):
+            keywords = [k.strip() for k in keywords.split(",")]
+
+        # =========================
+        # SET UI VALUES
+        # =========================
+        self.rule_name.setText(name)
+        self.rule_keywords.setText(", ".join(keywords))
+        self.rule_path.setText(path)
+
+        # =========================
+        # CHECK PATH WARNING (NOT BLOCKING)
+        # =========================
+        if path and not os.path.exists(path):
+            self.log(f"⚠️ Warning: path does not exist → {path}")
+
+        # =========================
+        # SET EDIT MODE
+        # =========================
         self.edit_index = idx
 
     def load_rule_to_inputs(self):
