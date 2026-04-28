@@ -71,6 +71,7 @@ $$\   $$ |$$ |  $$ |$$ |       $$ |$$\ $$ |\$  /$$ |$$   ____|
 
         self.stop_btn = QPushButton("🛑 STOP")
         self.stop_btn.clicked.connect(self.stop_sorting)
+        self.stop_btn.setEnabled(False)
 
         self.start_btn.setStyleSheet("""
             border: 2px solid #22c55e;
@@ -188,6 +189,7 @@ $$\   $$ |$$ |  $$ |$$ |       $$ |$$\ $$ |\$  /$$ |$$   ____|
         # DATA
         self.config = {"watch_folder": "", "rules": []}
         self.running = False
+        self.watcher_thread = None
         self.edit_index = -1
 
         # TRAY
@@ -361,11 +363,24 @@ $$\   $$ |$$ |  $$ |$$ |       $$ |$$\ $$ |\$  /$$ |$$   ____|
 
     # ================= WATCHER =================
     def start_sorting(self):
+
+        if self.running:
+            self.log("⚠️ Watcher already running")
+            return
+
+        if self.watcher_thread and self.watcher_thread.is_alive():
+            self.log("⚠️ Watcher thread already exists")
+            return
+
         if not self.config["watch_folder"]:
             self.log("❌ Select folder first!")
             return
 
         self.running = True
+
+        # UI LOCK
+        self.start_btn.setEnabled(False)
+        self.stop_btn.setEnabled(True)
 
         def run():
             start_watching(
@@ -378,10 +393,24 @@ $$\   $$ |$$ |  $$ |$$ |       $$ |$$\ $$ |\$  /$$ |$$   ____|
                 self.add_to_history
             )
 
-        threading.Thread(target=run, daemon=True).start()
+        self.watcher_thread = threading.Thread(
+            target=run,
+            daemon=True
+        )
+
+        self.watcher_thread.start()
 
     def stop_sorting(self):
+
+        if not self.running:
+            return
+
         self.running = False
+        self.watcher_thread = None
+
+        # UI UNLOCK
+        self.start_btn.setEnabled(True)
+        self.stop_btn.setEnabled(False)
 
     # ================= HISTORY SAVE =================
     def add_to_history(self, file, destination):
