@@ -1,0 +1,38 @@
+{
+    "watch_folder": "C:/Users/patak/Documents/SortMe",
+    "rules": [
+        {
+            "name": "Matematika",
+            "keywords": [
+                "MAT",
+                "mat",
+                "Mat",
+                "matematika",
+                "matika"
+            ],
+            "path": "C:\\Users\\patak\\Documents\\School\\Matematika"
+        },
+        {
+            "name": "Programovanie",
+            "keywords": [
+                "JAVA",
+                "java",
+                "C",
+                "Python",
+                "python",
+                "coding",
+                "PY",
+                "py"
+            ],
+            "path": "C:\\Users\\patak\\Documents\\School\\Programovanie"
+        },
+        {
+            "name": "SPSS",
+            "keywords": [
+                "SPSS",
+                "spss"
+            ],
+            "path": "C:\\Users\\patak\\Documents\\School\\SPSS"
+        }
+    ]
+}

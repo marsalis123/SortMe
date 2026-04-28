@@ -1,0 +1,99 @@
+❌ Select folder first!
+🔥 WATCHER STARTED
+📁 Watching: C:\Users\patak\Documents\SortMe
+⚠️ FALLBACK: test_666.txt → Nezaradene
+🛑 WATCHER STOPPED
+🔥 WATCHER STARTED
+📁 Watching: C:\Users\patak\Documents\SortMe
+🛑 WATCHER STOPPED
+🔥 WATCHER STARTED
+📁 Watching: C:\Users\patak\Documents\SortMe
+🛑 WATCHER STOPPED
+🔥 WATCHER STARTED
+📁 Watching: C:\Users\patak\Documents\SortMe
+📦 MOVED: JAVA.pdf → C:\Users\patak\Documents\School\Programovanie
+🛑 WATCHER STOPPED
+🔥 WATCHER STARTED
+📁 Watching: C:\Users\patak\Documents\SortMe
+🛑 WATCHER STOPPED
+🔥 WATCHER STARTED
+📁 Watching: C:\Users\patak\Documents\SortMe
+🛑 WATCHER STOPPED
+🔥 WATCHER STARTED
+📁 Watching: C:\Users\patak\Documents\SortMe
+🛑 WATCHER STOPPED
+🔥 WATCHER STARTED
+📁 Watching: C:\Users\patak\Documents\SortMe
+🛑 WATCHER STOPPED
+🔥 WATCHER STARTED
+📁 Watching: C:\Users\patak\Documents\SortMe
+📦 MOVED: PY.txt → C:\Users\patak\Documents\School\Programovanie
+↩ Undo: C:\Users\patak\Documents\School\Programovanie\PY.txt → C:\Users\patak\Documents\School\Programovanie\PY.txt
+❌ Undo failed: 'SmartSorterUI' object has no attribute 'mark_undone'
+🛑 WATCHER STOPPED
+↩ Undo: C:\Users\patak\Documents\School\Programovanie\PY.txt → C:\Users\patak\Documents\School\Programovanie\PY.txt
+🔥 WATCHER STARTED
+📁 Watching: C:\Users\patak\Documents\SortMe
+🛑 WATCHER STOPPED
+🔥 WATCHER STARTED
+📁 Watching: C:\Users\patak\Documents\SortMe
+📦 MOVED: JAVA.pdf → C:\Users\patak\Documents\School\Programovanie
+❌ Undo failed: [WinError 3] The system cannot find the path specified: 'C:\\Users\\patak\\Documents\\School\\Programovanie\\JAVA.pdf' -> 'JAVA.pdf\\JAVA.pdf'
+🛑 WATCHER STOPPED
+↩ Undo: C:\Users\patak\Documents\School\Programovanie\JAVA.pdf → JAVA.pdf
+🔥 WATCHER STARTED
+📁 Watching: C:\Users\patak\Documents\SortMe
+📦 MOVED: JAVA.pdf → C:\Users\patak\Documents\School\Programovanie
+↩ Undo: C:\Users\patak\Documents\School\Programovanie\JAVA.pdf → JAVA.pdf
+🔥 WATCHER STARTED
+📁 Watching: C:\Users\patak\Documents\SortMe
+🛑 WATCHER STOPPED
+🔥 WATCHER STARTED
+📁 Watching: C:\Users\patak\Documents\SortMe
+📦 MOVED: JAVA.pdf → C:\Users\patak\Documents\School\Programovanie
+🛑 WATCHER STOPPED
+↩ Undo: C:\Users\patak\Documents\School\Programovanie\JAVA.pdf → C:\Users\patak\Documents\SortMe\JAVA.pdf
+🔥 WATCHER STARTED
+📁 Watching: C:\Users\patak\Documents\SortMe
+📦 MOVED: JAVA.pdf → C:\Users\patak\Documents\School\Programovanie
+🛑 WATCHER STOPPED
+🔥 WATCHER STARTED
+📁 Watching: C:\Users\patak\Documents\SortMe
+📦 MOVED: JAVA.pdf → C:\Users\patak\Documents\School\Programovanie
+🛑 WATCHER STOPPED
+🔥 WATCHER STARTED
+📁 Watching: C:\Users\patak\Documents\SortMe
+🛑 WATCHER STOPPED
+❌ Rule name cannot be empty!
+❌ Keywords cannot be empty!
+❌ Target path cannot be empty!
+➕ Added rule: dawdaw
+❌ Rule name cannot be empty!
+❌ Rule name cannot be empty!
+❌ Rule name cannot be empty!
+❌ Rule name cannot be empty!
+❌ Rule name cannot be empty!
+🔥 WATCHER STARTED
+📁 Watching: C:\Users\patak\Documents\SortMe
+📦 MOVED: JAVA.pdf → C:\Users\patak\Documents\School\Programovanie
+🛑 WATCHER STOPPED
+🔥 WATCHER STARTED
+📁 Watching: C:\Users\patak\Documents\SortMe
+🛑 WATCHER STOPPED
+❌ Rule name cannot be empty!
+❌ Rule name cannot be empty!
+🔥 WATCHER STARTED
+📁 Watching: C:\Users\patak\Documents\SortMe
+🛑 WATCHER STOPPED
+🔥 WATCHER STARTED
+📁 Watching: C:\Users\patak\Documents\SortMe
+📦 MOVED: JAVA.pdf → C:\Users\patak\Documents\School\Programovanie
+🛑 WATCHER STOPPED
+🔥 WATCHER STARTED
+📁 Watching: C:\Users\patak\Documents\SortMe
+📦 MOVED: JAVA.pdf → C:\Users\patak\Documents\School\Programovanie
+🛑 WATCHER STOPPED
+🔥 WATCHER STARTED
+📁 Watching: C:\Users\patak\Documents\SortMe
+🛑 WATCHER STOPPED
+❌ Config load failed: Expecting value: line 3 column 15 (char 71)
