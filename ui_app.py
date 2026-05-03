@@ -10,7 +10,7 @@ from PySide6.QtWidgets import (
     QApplication, QWidget, QHBoxLayout, QVBoxLayout,
     QPushButton, QLabel, QFileDialog, QTextEdit,
     QLineEdit, QListWidget, QSystemTrayIcon, QMenu,
-    QListWidgetItem, QMessageBox
+    QListWidgetItem, QMessageBox, QAbstractItemView
 )
 
 from PySide6.QtGui import QIcon, QCursor
@@ -118,6 +118,7 @@ $$\   $$ |$$ |  $$ |$$ |       $$ |$$\ $$ |\$  /$$ |$$   ____|
         self.edit_btn.clicked.connect(self.edit_rule)
         self.delete_btn.clicked.connect(self.delete_rule)
 
+
         self.left.addWidget(self.add_btn)
         self.left.addWidget(self.edit_btn)
         self.left.addWidget(self.delete_btn)
@@ -142,6 +143,16 @@ $$\   $$ |$$ |  $$ |$$ |       $$ |$$\ $$ |\$  /$$ |$$   ____|
         self.right.addWidget(QLabel("📂 Rules"))
 
         self.rules_list = QListWidget()
+        self.rules_list.setDragDropMode(QAbstractItemView.InternalMove)
+        self.rules_list.setDefaultDropAction(Qt.MoveAction)
+
+        # =========================
+        # DRAG & DROP RULE PRIORITY
+        # =========================
+        self.rules_list.setDragDropMode(QAbstractItemView.InternalMove)
+        self.rules_list.setDefaultDropAction(Qt.MoveAction)
+
+        self.rules_list.model().rowsMoved.connect(self.save_rule_order)
         self.rules_list.itemDoubleClicked.connect(self.load_rule_to_inputs)
         self.right.addWidget(self.rules_list)
 
@@ -614,10 +625,69 @@ $$\   $$ |$$ |  $$ |$$ |       $$ |$$\ $$ |\$  /$$ |$$   ____|
             self.save_config()
             self.refresh_rules()
 
+    def move_rule_up(self):
+
+        idx = self.rules_list.currentRow()
+
+        if idx <= 0:
+            return
+
+        self.config["rules"][idx], self.config["rules"][idx - 1] = (
+            self.config["rules"][idx - 1],
+            self.config["rules"][idx]
+        )
+
+        self.save_config()
+        self.refresh_rules()
+
+        self.rules_list.setCurrentRow(idx - 1)
+
+    def move_rule_down(self):
+
+        idx = self.rules_list.currentRow()
+
+        if idx < 0 or idx >= len(self.config["rules"]) - 1:
+            return
+
+        self.config["rules"][idx], self.config["rules"][idx + 1] = (
+            self.config["rules"][idx + 1],
+            self.config["rules"][idx]
+        )
+
+        self.save_config()
+        self.refresh_rules()
+
+        self.rules_list.setCurrentRow(idx + 1)
+
     def refresh_rules(self):
+
         self.rules_list.clear()
-        for r in self.config["rules"]:
-            self.rules_list.addItem(f"{r['name']} → {r['path']}")
+
+        for i, r in enumerate(self.config["rules"], start=1):
+            self.rules_list.addItem(f"[{i}] {r['name']} → {r['path']}")
+
+    def save_rule_order(self):
+
+        new_rules = []
+
+        for i in range(self.rules_list.count()):
+
+            text = self.rules_list.item(i).text()
+
+            # odstráni [1], [2], ...
+            text = text.split("] ", 1)[1]
+
+            rule_name = text.split(" → ")[0]
+
+            for rule in self.config["rules"]:
+                if rule["name"] == rule_name:
+                    new_rules.append(rule)
+                    break
+
+        self.config["rules"] = new_rules
+        self.save_config()
+
+        self.refresh_rules()
 
     # ================= EXIT =================
     def exit_app(self):
