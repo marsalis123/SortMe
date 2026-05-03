@@ -4,6 +4,7 @@ import threading
 import json
 import subprocess
 import platform
+import uuid
 from datetime import datetime
 
 from PySide6.QtWidgets import (
@@ -202,6 +203,7 @@ $$\   $$ |$$ |  $$ |$$ |       $$ |$$\ $$ |\$  /$$ |$$   ____|
         self.running = False
         self.watcher_thread = None
         self.edit_index = -1
+        self.edit_rule_id = None
 
         # TRAY
         self.tray = QSystemTrayIcon(self)
@@ -261,6 +263,8 @@ $$\   $$ |$$ |  $$ |$$ |       $$ |$$\ $$ |\$  /$$ |$$   ____|
             history = []
 
         for item in reversed(history):
+            if not isinstance(item, dict):
+                continue
 
             file_name = item.get("file") or item.get("source") or "unknown"
             destination = item.get("destination", "")
@@ -548,14 +552,20 @@ $$\   $$ |$$ |  $$ |$$ |       $$ |$$\ $$ |\$  /$$ |$$   ____|
             return
 
         rule = {
+            "id": str(uuid.uuid4()),
             "name": name,
             "keywords": keywords,
             "path": path
         }
 
         if self.edit_index >= 0:
-            self.config["rules"][self.edit_index] = rule
+            for i, r in enumerate(self.config["rules"]):
+                if r.get("id") == self.edit_rule_id:
+                    self.config["rules"][i] = rule
+                    break
+
             self.edit_index = -1
+            self.edit_rule_id = None
         else:
             self.config["rules"].append(rule)
 
@@ -569,6 +579,7 @@ $$\   $$ |$$ |  $$ |$$ |       $$ |$$\ $$ |\$  /$$ |$$   ____|
         self.rule_keywords.clear()
         self.rule_path.clear()
         self.edit_index = -1
+        self.edit_rule_id = None
 
     def edit_rule(self):
 
@@ -581,6 +592,7 @@ $$\   $$ |$$ |  $$ |$$ |       $$ |$$\ $$ |\$  /$$ |$$   ____|
         # =========================
         try:
             rule = self.config["rules"][idx]
+            self.edit_rule_id = rule.get("id")
         except Exception as e:
             self.log(f"❌ Rule load error: {e}")
             return
@@ -680,7 +692,7 @@ $$\   $$ |$$ |  $$ |$$ |       $$ |$$\ $$ |\$  /$$ |$$   ____|
             rule_name = text.split(" → ")[0]
 
             for rule in self.config["rules"]:
-                if rule["name"] == rule_name:
+                if rule.get("name") == rule_name:
                     new_rules.append(rule)
                     break
 

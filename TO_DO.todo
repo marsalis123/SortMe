@@ -1,0 +1,27 @@
+New Task ( CTLR + ENTER)
+Done Task ( Alt + d)
+Cancel Task ( Alt + c)
+
+
+FAZE 1:
+    ✔ 1.Start / Stop button locking @done (4/28/2026, 10:08:35 PM)
+    ✔ 2.Duplicate watcher protection @done (4/28/2026, 10:20:07 PM)
+    ✔ 3.Safe JSON loading (config + history) @done (4/28/2026, 10:39:32 PM)
+    ✔ 4.Path validation for rules @done (4/28/2026, 10:59:15 PM)
+    ✔ 5.Rule priority system (Move Up / Down) @done (5/3/2026, 11:28:48 PM)
+    ✘ 6.File extension matching @cancelled (5/3/2026, 11:34:21 PM)             # Možno v budúcnosti #
+    ☐ 7.History stability / backward compatibility
+    ☐ 8.Ignore temporary files (.tmp, .crdownload, .part)
+    ☐ 9.Watcher exception hardening
+    ☐ 10.Clean shutdown verification
+    ☐ 11.Config save/load verification
+    ☐ 12.General bug testing & edge cases
+    ☐ 13.UI/UX polish for core workflow
+    ☐ 14.Final Phase 1 stability testing
+    ☐ 15.Build first “stable v1 foundation” release
+
+Faze 2:
+    ☐ Duplicities for rules
+
+
+

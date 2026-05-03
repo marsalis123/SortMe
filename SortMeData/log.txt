@@ -97,3 +97,21 @@
 📁 Watching: C:\Users\patak\Documents\SortMe
 🛑 WATCHER STOPPED
 ❌ Config load failed: Expecting value: line 3 column 15 (char 71)
+🔥 WATCHER STARTED
+📁 Watching: C:\Users\patak\Documents\SortMe
+🛑 WATCHER STOPPED
+🔥 WATCHER STARTED
+📁 Watching: C:\Users\patak\Documents\SortMe
+🛑 WATCHER STOPPED
+🔥 WATCHER STARTED
+📁 Watching: C:\Users\patak\Documents\SortMe
+📦 MOVED: JAVA.pdf → Programovanie
+🛑 WATCHER STOPPED
+📁 Created missing folder: C:\Users\patak\Documents\n
+📁 Created missing folder: dawdwas
+🔥 WATCHER STARTED
+📁 Watching: C:\Users\patak\Documents\SortMe
+🛑 WATCHER STOPPED
+🔥 WATCHER STARTED
+📁 Watching: C:\Users\patak\Documents\SortMe
+🛑 WATCHER STOPPED
