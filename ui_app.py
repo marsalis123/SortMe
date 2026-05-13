@@ -458,8 +458,12 @@ $$\   $$ |$$ |  $$ |$$ |       $$ |$$\ $$ |\$  /$$ |$$   ____|
         history.append(entry)
         history = history[-50:]
 
-        with open(path, "w") as f:
+        tmp_path = path + ".tmp"
+
+        with open(tmp_path, "w") as f:
             json.dump(history, f, indent=4)
+
+        os.replace(tmp_path, path)
 
     # ================= STATUS =================
     def update_status(self, status):
