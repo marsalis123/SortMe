@@ -115,3 +115,17 @@
 🔥 WATCHER STARTED
 📁 Watching: C:\Users\patak\Documents\SortMe
 🛑 WATCHER STOPPED
+🔥 WATCHER STARTED
+📁 Watching: C:\Users\patak\Documents\SortMe
+🛑 WATCHER STOPPED
+🔥 WATCHER STARTED
+📁 Watching: C:\Users\patak\Documents\SortMe
+🛑 WATCHER STOPPED
+🔥 WATCHER STARTED
+📁 Watching: C:\Users\patak\Documents\SortMe
+🛑 WATCHER STOPPED
+🛑 Shutting down...
+🔥 WATCHER STARTED
+📁 Watching: C:\Users\patak\Documents\SortMe
+🛑 WATCHER STOPPED
+🛑 Shutting down...

@@ -46,136 +46,184 @@ def start_watching(folder, config, stop_flag, log, status_callback, notify_callb
         try:
             files = os.listdir(folder)
 
+            # =========================
+            # SAFE RULES READ
+            # =========================
+            rules = config.get("rules", [])
+
+            if not isinstance(rules, list):
+                log("❌ Invalid rules format in config")
+                rules = []
+
             for file in files:
 
-                # =========================
-                # IGNORE TEMP FILES
-                # =========================
-                ignored_extensions = (
-                    ".tmp",
-                    ".crdownload",
-                    ".part"
-                )
-
-                ignored_prefixes = (
-                    "~$",
-                )
-
-                lower_file = file.lower()
-
-                if lower_file.endswith(ignored_extensions):
-                    continue
-
-                if file.startswith(ignored_prefixes):
-                    continue
-
-                full_path = os.path.join(folder, file)
-
-                if os.path.isdir(full_path):
-                    continue
-
-                moved = False
-
-                # =========================
-                # RULE MATCHING
-                # =========================
-                for rule in config.get("rules", []):
+                try:
 
                     # =========================
-                    # SAFE RULE READ
+                    # IGNORE TEMP FILES
                     # =========================
-                    path = rule.get("path")
+                    ignored_extensions = (
+                        ".tmp",
+                        ".crdownload",
+                        ".part"
+                    )
 
-                    if not path:
-                        log(f"❌ Skipping rule without path: {rule}")
+                    ignored_prefixes = (
+                        "~$",
+                    )
+
+                    lower_file = file.lower()
+
+                    if lower_file.endswith(ignored_extensions):
                         continue
 
-                    path = os.path.normpath(path)
+                    if file.startswith(ignored_prefixes):
+                        continue
+
+                    full_path = os.path.join(folder, file)
 
                     # =========================
-                    # KEYWORD MATCH
+                    # FILE MAY DISAPPEAR
                     # =========================
-                    for keyword in rule.get("keywords", []):
+                    if not os.path.exists(full_path):
+                        continue
 
-                        if keyword.lower() in file.lower():
+                    if os.path.isdir(full_path):
+                        continue
 
-                            target_dir = path
+                    moved = False
 
-                            try:
-                                if not os.path.exists(target_dir):
-                                    os.makedirs(target_dir)
+                    # =========================
+                    # RULE MATCHING
+                    # =========================
+                    for rule in rules:
 
-                                target_path = os.path.join(target_dir, file)
-                                target_path = safe_move(full_path, target_path)
+                        # =========================
+                        # SAFE RULE TYPE
+                        # =========================
+                        if not isinstance(rule, dict):
+                            log(f"❌ Invalid rule format: {rule}")
+                            continue
 
-                                shutil.move(full_path, target_path)
+                        # =========================
+                        # SAFE PATH READ
+                        # =========================
+                        path = rule.get("path")
 
-                                msg = f"{file} → {rule['name']}"
-                                log(f"📦 MOVED: {msg}")
+                        if not isinstance(path, str) or not path.strip():
+                            log(f"❌ Skipping rule without valid path: {rule}")
+                            continue
 
-                                history_callback(file, target_path)
+                        path = os.path.normpath(path)
 
-                                processed_count += 1
-                                last_action = msg
+                        # =========================
+                        # SAFE KEYWORDS READ
+                        # =========================
+                        keywords = rule.get("keywords", [])
 
-                                status["processed_count"] = processed_count
-                                status["last_action"] = last_action
+                        if isinstance(keywords, str):
+                            keywords = [k.strip() for k in keywords.split(",")]
 
-                                notify_callback("Sorted", msg, "success")
+                        if not isinstance(keywords, list):
+                            log(f"❌ Invalid keywords in rule: {rule}")
+                            continue
 
-                                push_status()
+                        # =========================
+                        # KEYWORD MATCH
+                        # =========================
+                        for keyword in keywords:
 
-                            except Exception as e:
-                                log(f"❌ MOVE ERROR: {e}")
-                                notify_callback("Error", str(e), "error")
+                            if not isinstance(keyword, str):
+                                continue
 
-                            moved = True
+                            if keyword.lower() in file.lower():
+
+                                target_dir = path
+
+                                try:
+
+                                    if not os.path.exists(target_dir):
+                                        os.makedirs(target_dir)
+
+                                    target_path = os.path.join(target_dir, file)
+                                    target_path = safe_move(full_path, target_path)
+
+                                    shutil.move(full_path, target_path)
+
+                                    msg = f"{file} → {rule.get('name', 'Unnamed Rule')}"
+
+                                    log(f"📦 MOVED: {msg}")
+
+                                    history_callback(file, target_path)
+
+                                    processed_count += 1
+                                    last_action = msg
+
+                                    status["processed_count"] = processed_count
+                                    status["last_action"] = last_action
+
+                                    notify_callback("Sorted", msg, "success")
+
+                                    push_status()
+
+                                except Exception as e:
+
+                                    log(f"❌ MOVE ERROR: {e}")
+                                    notify_callback("Error", str(e), "error")
+
+                                moved = True
+                                break
+
+                        if moved:
                             break
 
-                    if moved:
-                        break
+                    # =========================
+                    # FALLBACK
+                    # =========================
+                    if not moved:
 
-                # =========================
-                # FALLBACK
-                # =========================
-                if not moved:
+                        fallback_dir = os.path.join(base_folder, "School/Nezaradene")
 
-                    fallback_dir = os.path.join(base_folder, "School/Nezaradene")
-                    os.makedirs(fallback_dir, exist_ok=True)
+                        try:
+                            os.makedirs(fallback_dir, exist_ok=True)
 
-                    target_path = os.path.join(fallback_dir, file)
-                    target_path = safe_move(full_path, target_path)
+                            target_path = os.path.join(fallback_dir, file)
+                            target_path = safe_move(full_path, target_path)
 
-                    try:
-                        shutil.move(full_path, target_path)
+                            shutil.move(full_path, target_path)
 
-                        msg = f"{file} → Nezaradene"
+                            msg = f"{file} → Nezaradene"
 
-                        log(f"⚠️ FALLBACK: {msg}")
+                            log(f"⚠️ FALLBACK: {msg}")
 
-                        # 🔥 HISTORY
-                        history_callback(file, target_path)
+                            history_callback(file, target_path)
 
-                        processed_count += 1
-                        last_action = msg
+                            processed_count += 1
+                            last_action = msg
 
-                        status["processed_count"] = processed_count
-                        status["last_action"] = last_action
+                            status["processed_count"] = processed_count
+                            status["last_action"] = last_action
 
-                        notify_callback("Unsorted", msg, "warning")
+                            notify_callback("Unsorted", msg, "warning")
 
-                        push_status()
+                            push_status()
 
-                    except Exception as e:
+                        except Exception as e:
 
-                        log(f"❌ FALLBACK ERROR: {e}")
-                        notify_callback("Error", str(e), "error")
+                            log(f"❌ FALLBACK ERROR: {e}")
+                            notify_callback("Error", str(e), "error")
+
+                except Exception as e:
+
+                    log(f"❌ FILE PROCESS ERROR ({file}): {e}")
 
             time.sleep(1)
 
         except Exception as e:
+
             log(f"❌ WATCHER CRASH: {e}")
             notify_callback("Watcher crash", str(e), "error")
+
             time.sleep(2)
 
     status["running"] = False

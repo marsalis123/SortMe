@@ -413,6 +413,7 @@ $$\   $$ |$$ |  $$ |$$ |       $$ |$$\ $$ |\$  /$$ |$$   ____|
                 self.notify,
                 self.add_to_history
             )
+            self.watcher_thread = None
 
         self.watcher_thread = threading.Thread(
             target=run,
@@ -497,8 +498,29 @@ $$\   $$ |$$ |  $$ |$$ |       $$ |$$\ $$ |\$  /$$ |$$   ____|
 
     # ================= CONFIG =================
     def save_config(self):
-        with open(self.get_app_path("config.json"), "w") as f:
-            json.dump(self.config, f, indent=4)
+
+        path = self.get_app_path("config.json")
+        temp_path = path + ".tmp"
+
+        try:
+
+            # write temporary file first
+            with open(temp_path, "w", encoding="utf-8") as f:
+                json.dump(self.config, f, indent=4)
+
+            # atomic replace
+            os.replace(temp_path, path)
+
+        except Exception as e:
+
+            self.log(f"❌ Config save failed: {e}")
+
+            # cleanup temp file if exists
+            try:
+                if os.path.exists(temp_path):
+                    os.remove(temp_path)
+            except:
+                pass
 
     def load_config(self):
 
@@ -707,8 +729,26 @@ $$\   $$ |$$ |  $$ |$$ |       $$ |$$\ $$ |\$  /$$ |$$   ____|
 
     # ================= EXIT =================
     def exit_app(self):
+
+        self.log("🛑 Shutting down...")
+
+        # stop watcher
         self.running = False
+
+        # wait for thread to finish
+        if self.watcher_thread and self.watcher_thread.is_alive():
+
+            self.log("⌛ Waiting for watcher thread...")
+
+            self.watcher_thread.join(timeout=3)
+
+            if self.watcher_thread.is_alive():
+                self.log("⚠️ Watcher did not close in time")
+            else:
+                self.log("✅ Watcher stopped cleanly")
+
         self.tray.hide()
+
         QApplication.quit()
 
     def closeEvent(self, event):

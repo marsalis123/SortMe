@@ -11,10 +11,10 @@ FAZE 1:
     ✔ 5.Rule priority system (Move Up / Down) @done (5/3/2026, 11:28:48 PM)
     ✘ 6.File extension matching @cancelled (5/3/2026, 11:34:21 PM)             # Možno v budúcnosti #
     ✔ 7.History stability / backward compatibility @done (5/13/2026, 9:06:11 PM)
-    ☐ 8.Ignore temporary files (.tmp, .crdownload, .part)
-    ☐ 9.Watcher exception hardening
-    ☐ 10.Clean shutdown verification
-    ☐ 11.Config save/load verification
+    ✔ 8.Ignore temporary files (.tmp, .crdownload, .part) @done (5/13/2026, 9:13:23 PM)
+    ✔ 9.Watcher exception hardening @done (5/13/2026, 9:17:22 PM)
+    ✔ 10.Clean shutdown verification @done (5/13/2026, 9:21:52 PM)
+    ✔ 11.Config save/load verification @done (5/13/2026, 9:25:09 PM)
     ☐ 12.General bug testing & edge cases
     ☐ 13.UI/UX polish for core workflow
     ☐ 14.Final Phase 1 stability testing
@@ -22,6 +22,7 @@ FAZE 1:
 
 Faze 2:
     ☐ Duplicities for rules
+    ☐ Shutdown fully or Minimalize
 
 
 
