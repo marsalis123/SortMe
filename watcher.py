@@ -48,6 +48,27 @@ def start_watching(folder, config, stop_flag, log, status_callback, notify_callb
 
             for file in files:
 
+                # =========================
+                # IGNORE TEMP FILES
+                # =========================
+                ignored_extensions = (
+                    ".tmp",
+                    ".crdownload",
+                    ".part"
+                )
+
+                ignored_prefixes = (
+                    "~$",
+                )
+
+                lower_file = file.lower()
+
+                if lower_file.endswith(ignored_extensions):
+                    continue
+
+                if file.startswith(ignored_prefixes):
+                    continue
+
                 full_path = os.path.join(folder, file)
 
                 if os.path.isdir(full_path):
